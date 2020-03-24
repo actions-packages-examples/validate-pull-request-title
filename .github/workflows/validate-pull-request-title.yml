@@ -1,0 +1,64 @@
+name: Validate Pull Request Title
+
+# Controls when the action will run. Triggers the workflow on pull request
+# events where the pull request's base is set to `master`.
+on:
+  pull_request:
+    branches: [ master ]
+    types: [ opened, reopened, edited ]
+
+# A workflow run is made up of one or more jobs that can run sequentially or in parallel
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+
+    # Inspired by https://github.com/coleHafner/semantic-pr-title/blob/master/index.js
+    # LICENSE: https://github.com/coleHafner/semantic-pr-title/blob/master/LICENSE
+    # (Thank you, @coleHafner)
+
+    - name: Validate the Title
+      uses: actions/github-script@0.9.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |          
+          // Cache metadata
+          const owner = context.repo.owner
+          const repo = context.repo.repo
+          const pr = context.pull_request
+          const pullNumber = pr.number
+
+          let title = pr.title
+          
+          // Fetch the title again if its falsey. 
+          if (!title) {
+            const fullPr = await github.pulls.get({
+              owner: owner,
+              repo: repo,
+              pull_number: pullNumber
+            }
+            
+            if (!fullPr) {
+              throw new Error(`Error: we couldn't find ${owner}/${repo}#${pullNumber}`.)
+            }
+
+            // https://developer.github.com/v3/pulls/#response-1
+            title = fullPr.title
+          }
+          
+          // https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-guidelines
+          const ANGULAR_REGEX = '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([a-z0-9\\s]+\\))?(:\\s)([a-z0-9\\s]+)'
+          const regex = new RegExp(ANGULAR_REGEX, 'i')
+          
+          // https://stackoverflow.com/a/37592669
+          if (regex.test(title) === true) {
+            console.log('PR title ${title} is valid!')
+            process.exitCode = 0
+          } else {
+            console.log(`The PR title, ${title}, does not match the regex, ${ANGULAR_REGEX}.`)
+            process.exitCode = 1
+          }
