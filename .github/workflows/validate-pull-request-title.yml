@@ -53,7 +53,8 @@ jobs:
           }
 
           // Create a check run that will determine the status of the title, not this run.
-          const checkRun = await github.checks.create({
+          // Automatically create a variable called `checkRun` based on the `data` returned from Octokit (aliased as `github` here).
+          const { data: checkRun } = await github.checks.create({
             repo: repo,
             owner: owner,
             name: 'Validate Pull Request Title',
@@ -66,6 +67,8 @@ jobs:
               summary: `Determining if the title, ${title}, is valid.`
             }
           })
+          
+          console.log(checkRun) // <= Is `id` defined in this payload?
 
           // https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-guidelines
           const ANGULAR_REGEX = '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([a-z0-9\\s]+\\))?(:\\s)([a-z0-9\\s]+)'
