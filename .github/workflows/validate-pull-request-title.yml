@@ -37,7 +37,7 @@ jobs:
                     
           // Fetch the title again if its falsey. 
           if (!title) {
-            console.log(`DEBUG: The value of title is falsey. Fetching ${owner}/${repo}#${pullNumber} again.')
+            console.log(`DEBUG: The value of title is falsey. Fetching ${owner}/${repo}#${pullNumber} again.`)
 
             const fullPr = await github.pulls.get({
               owner: owner,
@@ -55,7 +55,7 @@ jobs:
           // Create a check run that will determine the status of the title, not this run.
           const checkRun = await github.checks.create({
             name: 'Validate Pull Request Title',
-            head_sha: headSha
+            head_sha: headSha,
             head_branch: headBranch,
             status: 'in_progress',
             started_at: new Date(),
