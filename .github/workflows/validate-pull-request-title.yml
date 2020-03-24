@@ -31,28 +31,33 @@ jobs:
           const repo = context.repo.repo
           const pr = context.pull_request
           const pullNumber = pr.number
-
           let title = pr.title
+          
+          console.log(owner, repo, pr, pullNumber, title)
           
           // Fetch the title again if its falsey. 
           if (!title) {
+            console.log('title is falsey, fetching the PR again')
             const fullPr = await github.pulls.get({
               owner: owner,
               repo: repo,
               pull_number: pullNumber
-            }
+            })
             
             if (!fullPr) {
-              throw new Error(`Error: we couldn't find ${owner}/${repo}#${pullNumber}`.)
+              throw new Error(`Error: we couldn't find ${owner}/${repo}#${pullNumber}.`)
             }
-
             // https://developer.github.com/v3/pulls/#response-1
             title = fullPr.title
           }
           
+          console.log(`title: ${title}`)
+
           // https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-guidelines
           const ANGULAR_REGEX = '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([a-z0-9\\s]+\\))?(:\\s)([a-z0-9\\s]+)'
           const regex = new RegExp(ANGULAR_REGEX, 'i')
+          
+          console.log(`Using this REGEX: ${ANGULAR_REGEX}`)
           
           // https://stackoverflow.com/a/37592669
           if (regex.test(title) === true) {
