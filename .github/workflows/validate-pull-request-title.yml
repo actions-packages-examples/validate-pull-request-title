@@ -29,7 +29,7 @@ jobs:
           // Cache metadata
           const owner = context.repo.owner
           const repo = context.repo.repo
-          const pr = context.pull_request
+          const pr = context.payload.pull_request
           const pullNumber = pr.number
           let title = pr.title
           
