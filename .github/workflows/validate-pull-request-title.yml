@@ -33,11 +33,10 @@ jobs:
           const pullNumber = pr.number
           let title = pr.title
           
-          console.log(owner, repo, pr, pullNumber, title)
-          
           // Fetch the title again if its falsey. 
           if (!title) {
-            console.log('title is falsey, fetching the PR again')
+            console.log(`DEBUG: The value of title is falsey. Fetching ${owner}/${repo}#${pullNumber} again.')
+
             const fullPr = await github.pulls.get({
               owner: owner,
               repo: repo,
