@@ -10,7 +10,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   # This workflow contains a single job called "build"
-  build:
+  validate-title:
     # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
@@ -21,7 +21,7 @@ jobs:
     # LICENSE: https://github.com/coleHafner/semantic-pr-title/blob/master/LICENSE
     # (Thank you, @coleHafner)
 
-    - name: Validate the Title
+    - name: Validate Pull Request Title
       uses: actions/github-script@0.9.0
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -30,9 +30,11 @@ jobs:
           const owner = context.repo.owner
           const repo = context.repo.repo
           const pr = context.payload.pull_request
+          const headSha = pr.head.sha
+          const headBranch = pr.head.ref
           const pullNumber = pr.number
           let title = pr.title
-          
+                    
           // Fetch the title again if its falsey. 
           if (!title) {
             console.log(`DEBUG: The value of title is falsey. Fetching ${owner}/${repo}#${pullNumber} again.')
@@ -49,20 +51,45 @@ jobs:
             // https://developer.github.com/v3/pulls/#response-1
             title = fullPr.title
           }
-          
-          console.log(`title: ${title}`)
+
+          // Create a check run that will determine the status of the title, not this run.
+          const checkRun = await github.checks.create({
+            name: 'Validate Pull Request Title',
+            head_sha: headSha
+            head_branch: headBranch,
+            status: 'in_progress',
+            started_at: new Date(),
+            output: {
+              title: 'Checking the pull request title',
+              summary: `Determining if the title, ${title}, is valid.`
+            }
+          })
 
           // https://github.com/angular/angular/blob/master/CONTRIBUTING.md#-commit-message-guidelines
           const ANGULAR_REGEX = '(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)(\\([a-z0-9\\s]+\\))?(:\\s)([a-z0-9\\s]+)'
           const regex = new RegExp(ANGULAR_REGEX, 'i')
           
-          console.log(`Using this REGEX: ${ANGULAR_REGEX}`)
-          
-          // https://stackoverflow.com/a/37592669
+          let titleValidity = false
+          let message = `The PR title, ${title}, does not match the regex, ${ANGULAR_REGEX}.`
+
           if (regex.test(title) === true) {
-            console.log('PR title ${title} is valid!')
-            process.exitCode = 0
-          } else {
-            console.log(`The PR title, ${title}, does not match the regex, ${ANGULAR_REGEX}.`)
-            process.exitCode = 1
-          }
+            titleValidity = true
+            message = `PR title ${title} is valid!`
+          } 
+          
+          const updatedRun = await github.checks.update({
+            repo: repo,
+            owner: owner,
+            check_run_id: checkRun.id,
+            status: 'completed',
+            completed_at: new Date(),
+            conclusion: (titleValidity ? 'success' : 'failure'),
+            output: {
+              title: (titleValidity ? 'Check succeeded!' : 'Check failed!'),
+              summary: message
+            }
+          })
+          
+          console.log(updatedRun)
+
+          
