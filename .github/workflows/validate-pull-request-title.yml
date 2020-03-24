@@ -57,7 +57,7 @@ jobs:
           const { data: checkRun } = await github.checks.create({
             repo: repo,
             owner: owner,
-            name: 'Validate Pull Request Title',
+            name: 'MANUAL PR CHECKER',
             head_sha: headSha,
             head_branch: headBranch,
             status: 'in_progress',
